@@ -1,0 +1,313 @@
+/* ── Layout ─────────────────────────────────────────────── */
+.shell {
+  display: flex;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+/* ── Sidebar ─────────────────────────────────────────────── */
+.sidebar {
+  width: 220px;
+  min-width: 220px;
+  background: #1e1f2e;
+  display: flex;
+  flex-direction: column;
+  transition: width 0.25s ease, min-width 0.25s ease;
+  overflow: hidden;
+}
+
+.shell-collapsed .sidebar {
+  width: 60px;
+  min-width: 60px;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 14px 14px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+
+.sidebar-logo {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.sidebar-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #f3f4f6;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.collapse-btn {
+  background: none;
+  border: none;
+  color: #9ca3af;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.collapse-btn:hover { color: #f3f4f6; }
+
+/* Nav */
+.sidebar-nav {
+  flex: 1;
+  padding: 12px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow-y: auto;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 10px;
+  border-radius: 8px;
+  color: #9ca3af;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.nav-item:hover {
+  background: rgba(255,255,255,0.06);
+  color: #f3f4f6;
+}
+
+.nav-active {
+  background: rgba(99,102,241,0.2);
+  color: #a5b4fc;
+}
+
+.nav-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+  width: 20px;
+  text-align: center;
+}
+
+.nav-label {
+  overflow: hidden;
+}
+
+/* Sidebar footer */
+.sidebar-footer {
+  padding: 10px 8px 16px;
+  border-top: 1px solid rgba(255,255,255,0.06);
+}
+
+.logout-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 10px;
+  background: none;
+  border: none;
+  border-radius: 8px;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+}
+
+.logout-btn:hover:not(:disabled) {
+  background: rgba(239,68,68,0.12);
+  color: #f87171;
+}
+
+.logout-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.logout-spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(156,163,175,0.3);
+  border-top-color: #9ca3af;
+  border-radius: 50%;
+  animation: spin-logout 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes spin-logout {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Main area ───────────────────────────────────────────── */
+.shell-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Topbar */
+.topbar {
+  height: 56px;
+  min-height: 56px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding: 0 24px;
+  gap: 20px;
+}
+
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.session-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.session-region {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  font-family: monospace;
+}
+
+.session-org-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-left: 2px solid #e5e7eb;
+  padding-left: 10px;
+}
+
+.session-org-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.org-label {
+  font-weight: 600;
+  color: #9ca3af;
+  min-width: 54px;
+}
+
+.org-value {
+  font-family: monospace;
+  color: #374151;
+  font-size: 11px;
+}
+
+/* provider badge reuse from LoginPage */
+.provider-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+.provider-aws   { background: #fff3e0; color: #e65100; }
+.provider-azure { background: #e3f2fd; color: #0277bd; }
+.provider-gcp   { background: #e8f5e9; color: #2e7d32; }
+
+/* User pill */
+.user-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f3f4f6;
+  border-radius: 999px;
+  padding: 5px 12px 5px 5px;
+}
+
+.user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #6366f1;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: #374151;
+  white-space: nowrap;
+}
+
+/* Page content */
+.shell-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 28px 32px;
+}
+
+/* ── Kibana badge ────────────────────────────────────────── */
+.kibana-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  background: #ecfdf5;
+  border: 1px solid #6ee7b7;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #065f46;
+  cursor: pointer;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.kibana-badge:hover {
+  background: #fee2e2;
+  border-color: #fca5a5;
+  color: #991b1b;
+}
+.kibana-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  flex-shrink: 0;
+  animation: blink-dot 2s ease-in-out infinite;
+}
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ── Responsive ──────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .session-org-block,
+  .session-region { display: none; }
+
+  .shell-content { padding: 20px 16px; }
+}
