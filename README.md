@@ -112,82 +112,44 @@ Vite proxies all `/api` requests to `http://localhost:8000` during development.
 
 ## Deployment
 
-This app has two parts — a **React SPA** (static files) and a **FastAPI backend** (Python server). They need to be deployed separately.
+The entire app — React frontend and FastAPI backend — deploys to **Vercel only**. No separate backend server needed.
 
-### Option A — Vercel (frontend) + Railway / Render (backend) [Recommended]
+The `vercel.json` at the repo root handles everything:
+- Builds `frontend/` with Vite and serves it as static files
+- Runs `api/index.py` as a Python serverless function (via [Mangum](https://mangum.faas.app/))
+- Rewrites every `/api/*` request to that function
 
-#### 1. Deploy the backend (Railway)
+### Deploy to Vercel
 
-1. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub repo
-2. Select this repository
-3. Set the **Root Directory** to `/` (project root)
-4. Set the **Start Command**:
-   ```
-   uvicorn src.main:app --host 0.0.0.0 --port $PORT
-   ```
-5. Add environment variable:
-   ```
-   INFA_LOGIN_URL=https://dm-us.informaticacloud.com/ma/api/v2/user/login
-   ```
-6. Railway will give you a URL like `https://infa-schedule-monitor.up.railway.app` — copy it.
+1. Go to **[vercel.com](https://vercel.com)** → sign in with GitHub → **Add New Project**
+2. Import **`infa-schedule-monitor`**
+3. Set these options:
 
-#### 2. Update CORS in the backend
+   | Setting | Value |
+   |---|---|
+   | **Framework Preset** | Other |
+   | **Root Directory** | `.` (repo root — not `frontend/`) |
+   | **Build / Output** | leave blank (handled by `vercel.json`) |
 
-Before deploying, edit `src/main.py` and add your Vercel frontend URL to `allow_origins`:
+4. No environment variables required — the login URL is built dynamically from the region the user enters in the login form
+5. Click **Deploy**
 
-```python
-allow_origins=[
-    "http://localhost:5173",
-    "https://your-app.vercel.app",   # add this
-],
-```
-
-Commit and push this change.
-
-#### 3. Deploy the frontend (Vercel)
-
-1. Go to [vercel.com](https://vercel.com) → New Project → Import `infa-schedule-monitor` from GitHub
-2. Set **Framework Preset** to `Vite`
-3. Set **Root Directory** to `frontend`
-4. Add an environment variable:
-   ```
-   VITE_API_BASE_URL=https://your-railway-backend-url.up.railway.app
-   ```
-5. Click Deploy
-
-#### 4. Point the frontend at the backend
-
-In `frontend/vite.config.js`, the `/api` proxy only works in local dev. For production, update your fetch calls to use `VITE_API_BASE_URL` — or configure Vercel [rewrites](https://vercel.com/docs/edge-network/rewrites) in a `vercel.json`:
-
-```json
-{
-  "rewrites": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://your-railway-backend-url.up.railway.app/api/:path*"
-    }
-  ]
-}
-```
-
-Place this `vercel.json` inside the `frontend/` folder.
+Your app will be live at `https://infa-schedule-monitor.vercel.app` (or a similar auto-generated URL).
 
 ---
 
 ### Option B — Single server (VPS / EC2)
 
-Run both on the same machine:
-
 ```bash
 # Build frontend
 cd frontend && npm run build    # outputs to frontend/dist/
 
-# Serve static files via FastAPI
-# add to src/main.py:
+# Serve everything from FastAPI
+# Add to src/main.py:
 from fastapi.staticfiles import StaticFiles
 app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
 
-# Then run:
+# Run:
 uvicorn src.main:app --host 0.0.0.0 --port 8000
 ```
 
@@ -195,9 +157,7 @@ uvicorn src.main:app --host 0.0.0.0 --port 8000
 
 ## Environment variables
 
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `INFA_LOGIN_URL` | Backend | IICS login endpoint (default: `https://dm-us.informaticacloud.com/ma/api/v2/user/login`) |
+No environment variables are required. All configuration is supplied at runtime by the user through the login form.
 
 ---
 
