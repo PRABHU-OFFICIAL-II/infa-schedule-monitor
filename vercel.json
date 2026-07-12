@@ -2,8 +2,8 @@
   "version": 2,
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
-  "routes": [
-    { "src": "/api/(.*)", "dest": "/api/index.py" },
-    { "src": "/(.*)",     "dest": "/index.html"   }
+  "rewrites": [
+    { "source": "/api/:path*", "destination": "https://infa-schedule-monitor-api.onrender.com/api/:path*" },
+    { "source": "/(.*)",       "destination": "/index.html" }
   ]
 }
