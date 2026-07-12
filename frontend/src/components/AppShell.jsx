@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useKibana } from '../context/KibanaContext'
 import './AppShell.css'
 
 const NAV_ITEMS = [
@@ -12,7 +11,6 @@ const NAV_ITEMS = [
 
 export default function AppShell() {
   const { session, logout } = useAuth()
-  const { isKibanaConnected, disconnectKibana } = useKibana()
   const navigate = useNavigate()
   const [collapsed, setCollapsed] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
@@ -72,12 +70,6 @@ export default function AppShell() {
             {/* page title injected via CSS :has — nothing needed here */}
           </div>
           <div className="topbar-right">
-            {isKibanaConnected && (
-              <button className="kibana-badge" onClick={disconnectKibana} title="Click to disconnect Kibana support session">
-                <span className="kibana-dot" />
-                Kibana connected
-              </button>
-            )}
             <div className="session-info">
               <span className={`provider-badge provider-${providerClass}`}>
                 {session?.cloudProvider}

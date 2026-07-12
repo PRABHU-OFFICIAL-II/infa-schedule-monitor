@@ -429,37 +429,16 @@ function UserLoginForm() {
 
 // ── Main Login Page ───────────────────────────────────────────────────────
 export default function LoginPage() {
-  const [mode, setMode] = useState('user') // 'user' | 'support'
-
   return (
     <div className="login-page">
-      <div className={`login-card ${mode === 'support' ? 'login-card-wide' : ''}`}>
+      <div className="login-card">
         <div className="login-header">
           <div className="login-logo">⚡</div>
           <h1>INFA Schedule Monitor</h1>
-          <p>{mode === 'user' ? 'Sign in with your Informatica IICS credentials' : 'Support login — authenticate via Okta'}</p>
+          <p>Sign in with your Informatica IICS credentials</p>
         </div>
 
-        {/* Mode selector */}
-        <div className="mode-selector">
-          <button
-            className={`mode-btn ${mode === 'user' ? 'mode-active' : ''}`}
-            onClick={() => setMode('user')}
-          >
-            <span className="mode-icon">👤</span>
-            User Login
-          </button>
-          <button
-            className={`mode-btn ${mode === 'support' ? 'mode-active mode-support-active' : ''}`}
-            onClick={() => setMode('support')}
-          >
-            <span className="mode-icon">🛠</span>
-            Support Login
-          </button>
-        </div>
-
-        {mode === 'user'    && <UserLoginForm />}
-        {mode === 'support' && <SupportLoginForm />}
+        <UserLoginForm />
 
         <p className="login-footer">Session is stored for this browser tab only.</p>
       </div>
