@@ -3,7 +3,6 @@
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
   "rewrites": [
-    { "source": "/api/:path*", "destination": "https://infa-schedule-monitor-api.onrender.com/api/:path*" },
-    { "source": "/(.*)",       "destination": "/index.html" }
+    { "source": "/api/:path*", "destination": "https://infa-schedule-monitor-api.onrender.com/api/:path*" }
   ]
 }
