@@ -6,6 +6,22 @@ Built after a real-world incident where an internal Informatica DNS failure (`Un
 
 ---
 
+## Quick start (Docker)
+
+The only prerequisite is [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows / macOS / Linux).
+
+```bash
+git clone https://github.com/PRABHU-OFFICIAL-II/infa-schedule-monitor.git
+cd infa-schedule-monitor
+docker compose up --build
+```
+
+Open **http://localhost:8000** in your browser and log in with your IICS credentials.
+
+No environment variables or additional configuration required — everything is supplied at runtime through the login form.
+
+---
+
 ## What it does
 
 - **Schedule overview** — lists all enabled schedules in your org with their recurrence, linked assets, and next expected run
@@ -32,7 +48,7 @@ src/               FastAPI backend (Python)
     support.py       Support-user endpoints (internal, not documented here)
 ```
 
-The frontend is a Vite SPA served statically. In production the React app calls the FastAPI backend — both need to be deployed separately (see [Deployment](#deployment) below).
+The frontend is a Vite SPA served statically. In production, FastAPI serves the pre-built React bundle directly — a single process handles everything (see [Deployment](#deployment) below).
 
 ---
 
@@ -112,14 +128,11 @@ Vite proxies all `/api` requests to `http://localhost:8000` during development.
 
 ## Deployment
 
-The entire app — React frontend and FastAPI backend — deploys to **Vercel only**. No separate backend server needed.
+### Option A — Docker (recommended for self-hosted / customer environments)
 
-The `vercel.json` at the repo root handles everything:
-- Builds `frontend/` with Vite and serves it as static files
-- Runs `api/index.py` as a Python serverless function (via [Mangum](https://mangum.faas.app/))
-- Rewrites every `/api/*` request to that function
+See [Quick start](#quick-start-docker) above. One command, no prerequisites beyond Docker Desktop.
 
-### Deploy to Vercel
+### Option B — Deploy to Vercel
 
 1. Go to **[vercel.com](https://vercel.com)** → sign in with GitHub → **Add New Project**
 2. Import **`infa-schedule-monitor`**
@@ -138,7 +151,7 @@ Your app will be live at `https://infa-schedule-monitor.vercel.app` (or a simila
 
 ---
 
-### Option B — Single server (VPS / EC2)
+### Option C — Single server without Docker (VPS / EC2)
 
 ```bash
 # Build frontend
