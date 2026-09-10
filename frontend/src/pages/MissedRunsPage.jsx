@@ -4,11 +4,12 @@ import { useKibana } from '../context/KibanaContext'
 import './MissedRunsPage.css'
 
 const STATUS_META = {
-  missed:       { label: 'Missed',      cls: 'badge-missed',       row: 'row-missed'  },
-  failed_infra: { label: 'POD / Infra', cls: 'badge-infra',        row: 'row-infra'   },
-  failed_other: { label: 'Failed',      cls: 'badge-failed-other', row: 'row-other-f' },
-  ok:           { label: 'OK',          cls: 'badge-ok',           row: ''            },
-  acknowledged: { label: 'User gap',    cls: 'badge-ack',          row: ''            },
+  missed:            { label: 'Missed',           cls: 'badge-missed',       row: 'row-missed'  },
+  trigger_misfired:  { label: 'Trigger Misfired', cls: 'badge-misfired',     row: 'row-misfired'},
+  failed_infra:      { label: 'POD / Infra',      cls: 'badge-infra',        row: 'row-infra'   },
+  failed_other:      { label: 'Failed',           cls: 'badge-failed-other', row: 'row-other-f' },
+  ok:                { label: 'OK',               cls: 'badge-ok',           row: ''            },
+  acknowledged:      { label: 'User gap',         cls: 'badge-ack',          row: ''            },
 }
 
 // ── Acknowledgment helpers (localStorage) ────────────────────────────────
@@ -61,6 +62,20 @@ function InfoIcon({ tip }) {
   )
 }
 
+// ── Trigger-misfired overlay helpers ─────────────────────────────────────
+// Returns true if a misfired entry matches a missed slot (same schedule, time within 30 min)
+function isMisfiredSlot(misfiredEntries, scheduleName, expectedTime) {
+  if (!misfiredEntries?.length) return null
+  const nameLower = scheduleName.toLowerCase()
+  const expMs     = new Date(expectedTime).getTime()
+  return misfiredEntries.find(e => {
+    if (!e.scheduleName) return false
+    if (e.scheduleName.toLowerCase() !== nameLower) return false
+    if (!e.shouldHaveFiredAt) return false
+    return Math.abs(new Date(e.shouldHaveFiredAt).getTime() - expMs) <= 30 * 60 * 1000
+  }) || null
+}
+
 // ── Kibana helpers ────────────────────────────────────────────────────────
 function buildKql(sched, slot) {
   const parts = []
@@ -80,11 +95,12 @@ function windowAroundSlot(slot) {
 
 // ── Dot tracker ───────────────────────────────────────────────────────────
 const DOT_STATUS_COLOR = {
-  ok:           '#22c55e',
-  missed:       '#f59e0b',
-  failed_infra: '#f97316',
-  failed_other: '#ef4444',
-  acknowledged: '#9ca3af',
+  ok:               '#22c55e',
+  missed:           '#f59e0b',
+  trigger_misfired: '#a855f7',
+  failed_infra:     '#f97316',
+  failed_other:     '#ef4444',
+  acknowledged:     '#9ca3af',
 }
 
 function DotTracker({ slots }) {
@@ -109,7 +125,7 @@ function DotTracker({ slots }) {
 }
 
 // ── Schedule card ─────────────────────────────────────────────────────────
-function ScheduleCard({ sched, defaultOpen, kibanaSession, acks, onToggleAck }) {
+function ScheduleCard({ sched, defaultOpen, kibanaSession, acks, onToggleAck, misfiredEntries }) {
   const [open, setOpen]           = useState(defaultOpen)
   const [activeTab, setActiveTab] = useState('slots')
   const [slotFilter, setSlotFilter] = useState('all')
@@ -118,11 +134,17 @@ function ScheduleCard({ sched, defaultOpen, kibanaSession, acks, onToggleAck }) 
 
   const rawSlots = sched.slots || []
 
-  // Overlay: missed slots the user acknowledged become 'acknowledged'
-  const effectiveSlots = rawSlots.map(slot => ({
-    ...slot,
-    _acked: slot.status === 'missed' && !!acks[ackKey(sched.scheduleName, slot.expectedTime)],
-  }))
+  // Overlay: missed → trigger_misfired (Kibana), missed → acknowledged (user)
+  const effectiveSlots = rawSlots.map(slot => {
+    const mf = slot.status === 'missed'
+      ? isMisfiredSlot(misfiredEntries, sched.scheduleName, slot.expectedTime)
+      : null
+    return {
+      ...slot,
+      _acked:    slot.status === 'missed' && !!acks[ackKey(sched.scheduleName, slot.expectedTime)],
+      _misfired: mf || null,
+    }
+  })
 
   const ackCount       = effectiveSlots.filter(s => s._acked).length
   const { counts }     = sched
@@ -255,7 +277,9 @@ function ScheduleCard({ sched, defaultOpen, kibanaSession, acks, onToggleAck }) 
                     </thead>
                     <tbody>
                       {filtered.map((slot, i) => {
-                        const displayStatus  = slot._acked ? 'acknowledged' : slot.status
+                        const displayStatus  = slot._acked ? 'acknowledged'
+                          : slot._misfired   ? 'trigger_misfired'
+                          : slot.status
                         const meta           = STATUS_META[displayStatus] || STATUS_META.ok
                         const kr             = kibanaResults[i]
                         const isProblematic  = displayStatus !== 'ok' && displayStatus !== 'acknowledged'
@@ -303,6 +327,21 @@ function ScheduleCard({ sched, defaultOpen, kibanaSession, acks, onToggleAck }) 
                                 </td>
                               )}
                             </tr>
+                            {slot._misfired && (
+                              <tr className="kibana-result-row">
+                                <td colSpan={kibanaSession ? 8 : 7}>
+                                  <div className="misfired-detail">
+                                    <span className="misfired-label">Trigger misfired detected in Kibana</span>
+                                    {slot._misfired.shouldHaveFiredAt && (
+                                      <span>Should have fired: {fmt(slot._misfired.shouldHaveFiredAt)}</span>
+                                    )}
+                                    {slot._misfired.prevFireTime && (
+                                      <span>Previous run: {fmt(slot._misfired.prevFireTime)}</span>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
                             {kr && (
                               <tr className="kibana-result-row">
                                 <td colSpan={kibanaSession ? 8 : 7}>
@@ -421,6 +460,11 @@ export default function MissedRunsPage() {
   const [error,   setError]   = useState(null)
   const [result,  setResult]  = useState(null)
 
+  const [misfiredEntries,  setMisfiredEntries]  = useState([])
+  const [misfiredLoading,  setMisfiredLoading]  = useState(false)
+  const [misfiredError,    setMisfiredError]    = useState(null)
+  const [misfiredChecked,  setMisfiredChecked]  = useState(false)
+
   const [filterName,   setFilterName]   = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
 
@@ -460,6 +504,7 @@ export default function MissedRunsPage() {
     }
 
     setLoading(true); setError(null); setResult(null)
+    setMisfiredEntries([]); setMisfiredChecked(false); setMisfiredError(null)
     try {
       const params = new URLSearchParams({
         window_start_iso: new Date(dateFrom).toISOString(),
@@ -483,6 +528,28 @@ export default function MissedRunsPage() {
       setError('Network error — is the backend running?')
     } finally {
       setLoading(false)
+    }
+  }
+
+  async function checkMisfired() {
+    if (!result || !kibanaSession) return
+    setMisfiredLoading(true); setMisfiredError(null)
+    try {
+      const params = new URLSearchParams({
+        window_start_iso: result.windowStart,
+        window_end_iso:   result.windowEnd,
+      })
+      const res = await fetch(`/api/missed-runs/check-misfired?${params}`, {
+        headers: { 'x-kibana-sid': kibanaSession.sid },
+      })
+      const data = await res.json()
+      if (!res.ok) { setMisfiredError(data.detail || 'Kibana query failed'); return }
+      setMisfiredEntries(data.misfireds || [])
+      setMisfiredChecked(true)
+    } catch {
+      setMisfiredError('Network error querying Kibana')
+    } finally {
+      setMisfiredLoading(false)
     }
   }
 
@@ -718,6 +785,30 @@ export default function MissedRunsPage() {
       {/* ── Schedule list ── */}
       {!loading && result && (
         <div className="table-card">
+          {/* ── Trigger misfired check (support mode only) ── */}
+          {kibanaSession && summary?.totalMissed > 0 && (
+            <div className="misfired-check-bar">
+              <div className="misfired-check-left">
+                <span className="misfired-check-icon">🔍</span>
+                <span><strong>Support mode:</strong> Cross-check Kibana for trigger misfired events</span>
+                {misfiredChecked && misfiredEntries.length > 0 && (
+                  <span className="misfired-check-found">{misfiredEntries.length} misfired event{misfiredEntries.length !== 1 ? 's' : ''} found — slots upgraded below</span>
+                )}
+                {misfiredChecked && misfiredEntries.length === 0 && (
+                  <span className="misfired-check-none">No trigger misfired events found in Kibana for this window</span>
+                )}
+                {misfiredError && <span className="misfired-check-error">{misfiredError}</span>}
+              </div>
+              <button
+                className="misfired-check-btn"
+                onClick={checkMisfired}
+                disabled={misfiredLoading}
+              >
+                {misfiredLoading ? <><span className="fetch-spinner" /> Checking…</> : 'Check Kibana'}
+              </button>
+            </div>
+          )}
+
           <div className="table-header">
             <div>
               <h3>Schedule Results</h3>
@@ -767,6 +858,7 @@ export default function MissedRunsPage() {
                 kibanaSession={kibanaSession}
                 acks={acks}
                 onToggleAck={toggleAck}
+                misfiredEntries={misfiredEntries}
               />
             ))}
           </div>

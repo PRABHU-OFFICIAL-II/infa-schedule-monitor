@@ -18,6 +18,19 @@ class SearchReq(BaseModel):
     size:  int = 50
 
 
+async def kibana_search_internal(
+    kql: str,
+    time_from: str,
+    time_to: str,
+    sid: str,
+    index: str = DEFAULT_INDEX,
+    size: int = 200,
+) -> dict:
+    """Shared helper — same 3-strategy search used by the /search endpoint."""
+    req = SearchReq(kql=kql, time_from=time_from, time_to=time_to, index=index, size=size)
+    return await kibana_search(req, x_kibana_sid=sid)
+
+
 def _kbn_headers(sid: str) -> dict:
     return {
         "kbn-version":               KBN_VERSION,

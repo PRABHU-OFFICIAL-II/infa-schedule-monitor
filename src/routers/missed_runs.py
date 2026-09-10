@@ -26,6 +26,50 @@ from datetime import datetime, timedelta, timezone
 
 from src.utils.schedule_utils import generate_expected_times, interval_label, _normalize_freq, _sched_freq_type
 from src.routers.activity import INFRA_ERROR_KEYWORDS, _best_error, classify_error
+from src.routers.kibana_search import kibana_search_internal
+
+
+# ── Trigger-misfired log parsers ──────────────────────────────────────────
+
+# Detailed: "Trigger {orgId}.{name}_trigger misfired job ... Should have fired at: HH:MM:SS MM/DD/YYYY; with previous fire time ..."
+_MISFIRED_DETAILED_RE = re.compile(
+    r'Trigger\s+[A-Za-z0-9]+\.(.+?)\s*_trigger\s+misfired\s+job\s+\S+'
+    r'\s+at:\s+[\d:,]+\s+[\d/]+\.\s+'
+    r'Should have fired at:\s+([\d:]+)\s+([\d/]+);\s+'
+    r'with previous fire time\s+([\d:]+)\s+([\d/]+)',
+    re.IGNORECASE,
+)
+# Short: "- trigger misfired {orgId}.{name}_trigger"
+_MISFIRED_SHORT_RE = re.compile(
+    r'-\s+trigger misfired\s+[A-Za-z0-9]+\.(.+?)\s*_trigger(?:\s|$)',
+    re.IGNORECASE,
+)
+
+
+def _parse_misfired_ts(time_str: str, date_str: str) -> str | None:
+    try:
+        dt = datetime.strptime(f"{time_str.strip()} {date_str.strip()}", "%H:%M:%S %m/%d/%Y")
+        return dt.replace(tzinfo=timezone.utc).isoformat()
+    except ValueError:
+        return None
+
+
+def _parse_misfired_message(message: str) -> dict | None:
+    m = _MISFIRED_DETAILED_RE.search(message)
+    if m:
+        return {
+            "scheduleName":      m.group(1).strip(),
+            "shouldHaveFiredAt": _parse_misfired_ts(m.group(2), m.group(3)),
+            "prevFireTime":      _parse_misfired_ts(m.group(4), m.group(5)),
+        }
+    m = _MISFIRED_SHORT_RE.search(message)
+    if m:
+        return {
+            "scheduleName":      m.group(1).strip(),
+            "shouldHaveFiredAt": None,
+            "prevFireTime":      None,
+        }
+    return None
 
 
 def _parse_ts(ts_str: str) -> datetime | None:
@@ -413,4 +457,57 @@ async def analyze_missed_runs(
             "totalFailedOther": total_failed_other,
         },
         "schedules": schedule_results,
+    }
+
+
+@router.get("/check-misfired")
+async def check_trigger_misfired(
+    window_start_iso: str = Query(...),
+    window_end_iso:   str = Query(...),
+    x_kibana_sid: str = Header(...),
+):
+    """
+    Support-mode endpoint: query Kibana for 'trigger misfired' log entries in the
+    given window and return parsed schedule names + expected fire times.
+
+    Kibana @timestamp may differ from event time (timezone/ingestion lag), so we
+    widen the Kibana query window by ±12 h to avoid missing entries, then return
+    the parsed 'should have fired at' times for the frontend to match against slots.
+    """
+    window_start = _parse_ts(window_start_iso)
+    window_end   = _parse_ts(window_end_iso)
+    if not window_start or not window_end:
+        raise HTTPException(422, "Invalid window_start_iso or window_end_iso")
+
+    # Widen search window for ingestion lag / timezone offset
+    kibana_from = (window_start - timedelta(hours=12)).isoformat()
+    kibana_to   = (window_end   + timedelta(hours=12)).isoformat()
+
+    try:
+        result = await kibana_search_internal(
+            kql='"trigger misfired"',
+            time_from=kibana_from,
+            time_to=kibana_to,
+            sid=x_kibana_sid,
+            size=500,
+        )
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(502, f"Kibana query failed: {exc}")
+
+    misfireds = []
+    for hit in result.get("hits", []):
+        message = hit.get("message", "")
+        parsed  = _parse_misfired_message(message)
+        if parsed:
+            misfireds.append({
+                **parsed,
+                "kibanaTimestamp": hit.get("timestamp"),
+                "rawMessage":      message[:500],
+            })
+
+    return {
+        "total":     len(misfireds),
+        "misfireds": misfireds,
     }

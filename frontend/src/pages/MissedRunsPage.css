@@ -685,9 +685,12 @@
   white-space: nowrap;
 }
 .badge-missed       { background: #fef9c3; color: #854d0e; }
+.badge-misfired     { background: #f3e8ff; color: #7e22ce; }
 .badge-infra        { background: #fff3e0; color: #c2410c; }
 .badge-failed-other { background: #fee2e2; color: #b91c1c; }
 .badge-ok           { background: #dcfce7; color: #15803d; }
+
+.row-misfired td { background: #faf5ff; }
 
 .col-time  { color: #6b7280; font-size: 12px; white-space: nowrap; }
 .col-name  { font-weight: 500; color: #111827; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -820,3 +823,60 @@
 .empty-state strong { color: #374151; }
 .empty-hint { font-size: 12px; color: #d1d5db; margin-top: 6px; }
 .empty-hint code { font-family: monospace; background: #f3f4f6; padding: 1px 5px; border-radius: 3px; color: #6b7280; }
+
+/* ── Trigger misfired check bar ──────────────────────────── */
+.misfired-check-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: #faf5ff;
+  border: 1px solid #d8b4fe;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+.misfired-check-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  color: #374151;
+}
+.misfired-check-icon { font-size: 15px; flex-shrink: 0; }
+.misfired-check-found { color: #7e22ce; font-weight: 600; }
+.misfired-check-none  { color: #6b7280; }
+.misfired-check-error { color: #b91c1c; }
+.misfired-check-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  background: #7c3aed;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+.misfired-check-btn:hover:not(:disabled) { background: #6d28d9; }
+.misfired-check-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+/* ── Trigger misfired detail row ─────────────────────────── */
+.misfired-detail {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 10px;
+  background: #f3e8ff;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #6b21a8;
+  flex-wrap: wrap;
+}
+.misfired-label { font-weight: 600; }
