@@ -2,7 +2,7 @@ import { useState, useCallback, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useKibana } from '../context/KibanaContext'
-import { getCloudProvider, getLoginUrl, isValidRegion } from '../constants/pods'
+import { getCloudProvider, getLoginUrl, isValidRegion, PODS } from '../constants/pods'
 import Toast from '../components/Toast'
 import LoadingOverlay from '../components/LoadingOverlay'
 import './LoginPage.css'
@@ -276,7 +276,7 @@ function UserLoginForm() {
 
   function validate() {
     if (!trimmedRegion) return 'Region is required.'
-    if (!isValidRegion(trimmedRegion)) return 'Invalid region format. Examples: dm-us, dm1-em, dm2-us'
+    if (!isValidRegion(trimmedRegion)) return 'Please select a pod from the dropdown.'
     switch (tab) {
       case 'standard':   if (!fields.username) return 'Username is required.'; if (!fields.password) return 'Password is required.'; break
       case 'saml':       if (!fields.samlToken) return 'SAML token is required.'; if (!fields.orgIdSaml) return 'Organisation ID is required.'; break
@@ -327,13 +327,23 @@ function UserLoginForm() {
 
       {/* Region */}
       <div className="form-group region-row">
-        <label htmlFor="region">Region</label>
-        <input
-          id="region" name="region" type="text"
-          placeholder="e.g. dm-us, dm1-em, dm2-us"
-          value={region} onChange={(e) => { setRegion(e.target.value); setError('') }}
-          disabled={loading} spellCheck={false} autoComplete="off"
-        />
+        <label htmlFor="region">Pod / Region</label>
+        <select
+          id="region" name="region"
+          value={region}
+          onChange={(e) => { setRegion(e.target.value); setError('') }}
+          disabled={loading}
+          className={!region ? 'placeholder' : ''}
+        >
+          <option value="">Select your pod…</option>
+          {PODS.map((g) => (
+            <optgroup key={g.group} label={g.group}>
+              {g.pods.map((p) => (
+                <option key={p.region} value={p.region}>{p.label}</option>
+              ))}
+            </optgroup>
+          ))}
+        </select>
         {cloudProvider && (
           <div className="pod-meta">
             <span className={`provider-badge provider-${cloudProvider.toLowerCase()}`}>{cloudProvider}</span>

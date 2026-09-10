@@ -162,6 +162,7 @@
 .provider-aws   { background: #fff3e0; color: #e65100; }
 .provider-azure { background: #e3f2fd; color: #0277bd; }
 .provider-gcp   { background: #e8f5e9; color: #2e7d32; }
+.provider-oci   { background: #fdf2ff; color: #7c3aed; }
 
 .pod-url-hint {
   font-size: 11px;
