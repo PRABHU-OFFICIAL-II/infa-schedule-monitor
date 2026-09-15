@@ -880,3 +880,5 @@
   flex-wrap: wrap;
 }
 .misfired-label { font-weight: 600; }
+
+.utc-hint { font-size: 11px; color: #9ca3af; font-weight: 400; margin-left: 2px; }

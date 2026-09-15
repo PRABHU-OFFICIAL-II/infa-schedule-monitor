@@ -618,8 +618,8 @@ export default function MissedRunsPage() {
           {/* From */}
           <label className="ctrl-label">
             <span className="ctrl-label-text">
-              From
-              <InfoIcon tip="Start of the analysis window. The app will look for schedule runs from this point forward." />
+              From <span className="utc-hint">(UTC)</span>
+              <InfoIcon tip="Start of the analysis window in UTC. If your local time is JST (UTC+9), subtract 9 hours — e.g. 6:00 PM JST = 9:00 AM UTC." />
             </span>
             <input
               type="datetime-local"
@@ -632,8 +632,8 @@ export default function MissedRunsPage() {
           {/* To */}
           <label className="ctrl-label">
             <span className="ctrl-label-text">
-              To
-              <InfoIcon tip="End of the analysis window. Defaults to now, but you can set a past end-time to analyse a historical incident." />
+              To <span className="utc-hint">(UTC)</span>
+              <InfoIcon tip="End of the analysis window in UTC. Defaults to now. For JST, subtract 9 hours from your local time." />
             </span>
             <input
               type="datetime-local"
