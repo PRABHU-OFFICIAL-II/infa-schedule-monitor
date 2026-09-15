@@ -439,16 +439,39 @@ function UserLoginForm() {
 
 // ── Main Login Page ───────────────────────────────────────────────────────
 export default function LoginPage() {
+  const [mode, setMode] = useState('user')
+  const { kibanaSession } = useKibana()
+
   return (
     <div className="login-page">
-      <div className="login-card">
+      <div className={`login-card${mode === 'support' ? ' login-card-wide' : ''}`}>
         <div className="login-header">
           <div className="login-logo">⚡</div>
           <h1>INFA Schedule Monitor</h1>
-          <p>Sign in with your Informatica IICS credentials</p>
+          <p>{mode === 'user' ? 'Sign in with your Informatica IICS credentials' : 'Informatica internal support access'}</p>
         </div>
 
-        <UserLoginForm />
+        <div className="mode-selector">
+          <button
+            type="button"
+            className={`mode-btn${mode === 'user' ? ' mode-active' : ''}`}
+            onClick={() => setMode('user')}
+          >
+            <span className="mode-icon">👤</span>
+            Customer Login
+          </button>
+          <button
+            type="button"
+            className={`mode-btn${mode === 'support' ? ' mode-active' : ''}`}
+            onClick={() => setMode('support')}
+          >
+            <span className="mode-icon">🛠</span>
+            Support Login
+            {kibanaSession && <span className="mode-connected-dot" />}
+          </button>
+        </div>
+
+        {mode === 'user' ? <UserLoginForm /> : <SupportLoginForm />}
 
         <p className="login-footer">Session is stored for this browser tab only.</p>
       </div>
