@@ -35,6 +35,7 @@ function SupportLoginForm() {
   const [kibanaData, setKibanaData] = useState(null)  // stored after push succeeds
   const [userSession, setUserSession] = useState('')
   const [xsrfToken, setXsrfToken] = useState('')
+  const [idmcFailReason, setIdmcFailReason] = useState('')
   const [toast, setToast] = useState(null)
   const dismissToast = useCallback(() => setToast(null), [])
   const pollingRef = useRef(false)
@@ -102,6 +103,7 @@ function SupportLoginForm() {
         } else {
           // Auto SSO failed — ask user to paste cookies manually
           setKibanaData(data)
+          setIdmcFailReason(data.idmcFailReason || '')
           setStage('cookies')
         }
       } catch {
@@ -189,6 +191,11 @@ function SupportLoginForm() {
             <p><strong>Kibana authenticated.</strong> Now paste your IDMC session cookies so the app can call the scheduler API on your behalf.</p>
           </div>
           <div className="support-cookie-steps">
+            {idmcFailReason && (
+              <p className="support-cookie-how" style={{ background: '#fef2f2', borderColor: '#fecaca', color: '#b91c1c', marginBottom: 8 }}>
+                <strong>Auto-fetch failed:</strong> {idmcFailReason}
+              </p>
+            )}
             <p className="support-cookie-how">
               <strong>How to get these:</strong> In your browser, navigate to{' '}
               <code>use4.dm-us.informaticacloud.com</code> (or whatever pod the customer is on),

@@ -273,24 +273,17 @@ def _get_cookie(client: httpx.AsyncClient, name: str) -> str | None:
     return None
 
 
-async def _establish_idmc_session(client: httpx.AsyncClient) -> dict | None:
+async def _establish_idmc_session(client: httpx.AsyncClient) -> tuple[dict | None, str]:
     """
     Trigger IDMC SP-initiated SSO using the live Okta session in the client.
 
-    After Kibana SAML the client has Okta session cookies.  IDMC's SP uses the
-    same Okta tenant, so:
-      1. GET IDMC SAML entry → Okta sees session → returns HTML page with a
-         SAMLResponse form (same pattern as Kibana's ACS flow).
-      2. We parse that form and POST the SAMLResponse to IDMC's ACS.
-      3. IDMC ACS sets USER_SESSION + XSRF_TOKEN cookies.
-
-    Returns {"userSession": "...", "xsrfToken": "..."} on success, None on failure.
+    Returns (cookies_dict, "") on success, or (None, reason_string) on failure.
     """
+    import logging
+    log = logging.getLogger(__name__)
+
     IDMC_BASE = "https://dm-us.informaticacloud.com"
-    entry_url = (
-        f"{IDMC_BASE}/identity-service/api/v1/Saml/Login"
-        "?RelayState=%2Fma%2F"
-    )
+    entry_url = f"{IDMC_BASE}/identity-service/api/v1/Saml/Login?RelayState=%2Fma%2F"
     browser_hdrs = {
         "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
         "User-Agent": (
@@ -301,39 +294,60 @@ async def _establish_idmc_session(client: httpx.AsyncClient) -> dict | None:
     }
     try:
         r = await client.get(entry_url, follow_redirects=True, headers=browser_hdrs)
+        log.info("IDMC SAML entry: status=%s url=%s", r.status_code, r.url)
 
-        # Fast path: IDMC set cookies without requiring a form POST (rare but possible)
+        # Fast path: IDMC set cookies without a form POST
         user_session = _get_cookie(client, "USER_SESSION")
         xsrf_token   = _get_cookie(client, "XSRF_TOKEN")
         if user_session and xsrf_token:
-            return {"userSession": user_session, "xsrfToken": xsrf_token}
+            return {"userSession": user_session, "xsrfToken": xsrf_token}, ""
 
-        # Normal path: Okta returned an HTML page with a SAMLResponse form.
-        # httpx follow_redirects only follows HTTP redirects, not form-based ones —
-        # we must parse the form and POST it manually (same as _complete_saml for Kibana).
-        if r.is_success and r.text:
-            parser = _FormParser()
-            parser.feed(r.text)
-            if parser.form_action and "SAMLResponse" in parser.inputs:
-                acs_r = await client.post(
-                    parser.form_action,
-                    data=parser.inputs,
-                    headers={"Content-Type": "application/x-www-form-urlencoded"},
-                    follow_redirects=True,
-                )
-                # Cookies may be on the ACS response or already in the jar
-                user_session = _get_cookie(client, "USER_SESSION")
-                xsrf_token   = _get_cookie(client, "XSRF_TOKEN")
-                if not user_session:
-                    user_session = acs_r.cookies.get("USER_SESSION")
-                if not xsrf_token:
-                    xsrf_token = acs_r.cookies.get("XSRF_TOKEN")
-                if user_session and xsrf_token:
-                    return {"userSession": user_session, "xsrfToken": xsrf_token}
+        if not r.is_success:
+            reason = f"IDMC entry GET failed ({r.status_code}): {r.text[:200]}"
+            log.warning(reason)
+            return None, reason
 
-        return None
-    except Exception:
-        return None
+        # Normal path: Okta returned an HTML page with a SAMLResponse form
+        parser = _FormParser()
+        parser.feed(r.text)
+        log.info("IDMC form_action=%s inputs=%s", parser.form_action, list(parser.inputs.keys()))
+
+        if not parser.form_action:
+            reason = f"No form action found in IDMC SAML page (status {r.status_code}). Page title: {r.text[:150]}"
+            log.warning(reason)
+            return None, reason
+
+        if "SAMLResponse" not in parser.inputs:
+            reason = f"SAMLResponse not in form inputs {list(parser.inputs.keys())} — may need re-auth"
+            log.warning(reason)
+            return None, reason
+
+        acs_r = await client.post(
+            parser.form_action,
+            data=parser.inputs,
+            headers={"Content-Type": "application/x-www-form-urlencoded"},
+            follow_redirects=True,
+        )
+        log.info("IDMC ACS: status=%s url=%s", acs_r.status_code, acs_r.url)
+
+        user_session = _get_cookie(client, "USER_SESSION") or acs_r.cookies.get("USER_SESSION")
+        xsrf_token   = _get_cookie(client, "XSRF_TOKEN")  or acs_r.cookies.get("XSRF_TOKEN")
+
+        if user_session and xsrf_token:
+            return {"userSession": user_session, "xsrfToken": xsrf_token}, ""
+
+        reason = (
+            f"ACS completed ({acs_r.status_code}) but cookies missing. "
+            f"user_session={'yes' if user_session else 'no'} "
+            f"xsrf_token={'yes' if xsrf_token else 'no'}"
+        )
+        log.warning(reason)
+        return None, reason
+
+    except Exception as exc:
+        reason = f"Exception in IDMC auto-auth: {type(exc).__name__}: {exc}"
+        logging.getLogger(__name__).warning(reason)
+        return None, reason
 
 
 # ── Endpoints ─────────────────────────────────────────────────────────────
@@ -374,17 +388,17 @@ async def verify_push(req: VerifyReq):
 
         # Attempt automatic IDMC session establishment using the live Okta session.
         # If this succeeds the user skips the manual cookie-paste step entirely.
-        idmc = await _establish_idmc_session(client)
+        idmc, idmc_fail_reason = await _establish_idmc_session(client)
 
         return {
             "status": "done",
             "sid": sid,
             "kibanaUrl": KIBANA_BASE,
             "kibanaSpace": KIBANA_SPACE,
-            # Present when auto-SSO worked; absent/null when user must paste manually
-            "userSession": idmc["userSession"] if idmc else None,
-            "xsrfToken":   idmc["xsrfToken"]   if idmc else None,
-            "idmcAutoAuth": idmc is not None,
+            "userSession":    idmc["userSession"] if idmc else None,
+            "xsrfToken":      idmc["xsrfToken"]   if idmc else None,
+            "idmcAutoAuth":   idmc is not None,
+            "idmcFailReason": idmc_fail_reason if not idmc else None,
         }
     except HTTPException:
         raise
