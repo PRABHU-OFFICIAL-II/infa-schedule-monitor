@@ -1,7 +1,6 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useKibana } from '../context/KibanaContext'
 import { getCloudProvider, getLoginUrl, isValidRegion, PODS } from '../constants/pods'
 import Toast from '../components/Toast'
 import LoadingOverlay from '../components/LoadingOverlay'
@@ -21,228 +20,7 @@ const ENDPOINTS = {
   salesforce: '/api/auth/login/salesforce',
 }
 
-// ── Support Login ─────────────────────────────────────────────────────────
-function SupportLoginForm() {
-  const { connectKibana } = useKibana()
-  const navigate = useNavigate()
-
-  const [username, setUsername] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  // stages: 'credentials' | 'push' | 'cookies'
-  const [stage, setStage] = useState('credentials')
-  const [kibanaData, setKibanaData] = useState(null)  // stored after push succeeds
-  const [userSession, setUserSession] = useState('')
-  const [xsrfToken, setXsrfToken] = useState('')
-  const [idmcFailReason, setIdmcFailReason] = useState('')
-  const [toast, setToast] = useState(null)
-  const dismissToast = useCallback(() => setToast(null), [])
-  const pollingRef = useRef(false)
-
-  async function handleSubmit(e) {
-    e.preventDefault()
-    if (!username) { setError('Username is required.'); return }
-    if (!password) { setError('Password is required.'); return }
-    setError('')
-    setLoading(true)
-    try {
-      const res = await fetch('/api/kibana/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      })
-      const data = await res.json()
-      if (!res.ok) {
-        const msg = data.detail || 'Login failed — check your credentials'
-        setError(msg)
-        setToast({ message: msg, type: 'error' })
-        return
-      }
-      if (data.status === 'done') {
-        setKibanaData(data)
-        setStage('cookies')
-      } else if (data.status === 'push_sent') {
-        setStage('push')
-        startPolling(data.stateHandle)
-      }
-    } catch {
-      const msg = 'Cannot reach the backend — is it running?'
-      setError(msg)
-      setToast({ message: msg, type: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  function startPolling(token) {
-    if (pollingRef.current) return
-    pollingRef.current = true
-    ;(async () => {
-      try {
-        const res = await fetch('/api/kibana/verify-push', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ state_handle: token }),
-        })
-        const data = await res.json()
-        if (!res.ok) {
-          setError(data.detail || 'Push verification failed')
-          setToast({ message: data.detail || 'Push rejected or timed out', type: 'error' })
-          setStage('credentials')
-        } else if (data.idmcAutoAuth) {
-          // Auto IDMC SSO worked — go straight in, no manual paste needed
-          connectKibana({
-            sid:         data.sid,
-            kibanaUrl:   data.kibanaUrl,
-            kibanaSpace: data.kibanaSpace,
-            userSession: data.userSession,
-            xsrfToken:   data.xsrfToken,
-          })
-          navigate('/support/investigate')
-        } else {
-          // Auto SSO failed — ask user to paste cookies manually
-          setKibanaData(data)
-          setIdmcFailReason(data.idmcFailReason || '')
-          setStage('cookies')
-        }
-      } catch {
-        setError('Network error during MFA verification')
-        setStage('credentials')
-      } finally {
-        pollingRef.current = false
-      }
-    })()
-  }
-
-  function handleCookieSubmit(e) {
-    e.preventDefault()
-    if (!userSession.trim()) { setError('USER_SESSION is required.'); return }
-    if (!xsrfToken.trim())   { setError('XSRF_TOKEN is required.'); return }
-    connectKibana({
-      sid:         kibanaData.sid,
-      kibanaUrl:   kibanaData.kibanaUrl,
-      kibanaSpace: kibanaData.kibanaSpace,
-      userSession: userSession.trim(),
-      xsrfToken:   xsrfToken.trim(),
-    })
-    navigate('/support/investigate')
-  }
-
-  return (
-    <>
-      {toast && <Toast message={toast.message} type={toast.type} onClose={dismissToast} />}
-
-      {stage === 'credentials' && (
-        <form className="login-form" onSubmit={handleSubmit} noValidate>
-          <div className="support-info">
-            <span className="support-info-icon">🔐</span>
-            <p>Sign in with your <strong>Informatica corporate</strong> (Okta) account.<br />An Okta Verify push will be sent to your phone.</p>
-          </div>
-          <div className="form-group">
-            <label htmlFor="sup-username">Informatica Email</label>
-            <input
-              id="sup-username" type="email" autoComplete="username"
-              placeholder="you@informatica.com"
-              value={username} onChange={(e) => { setUsername(e.target.value); setError('') }}
-              disabled={loading}
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="sup-password">Password</label>
-            <input
-              id="sup-password" type="password" autoComplete="current-password"
-              placeholder="••••••••"
-              value={password} onChange={(e) => { setPassword(e.target.value); setError('') }}
-              disabled={loading}
-            />
-          </div>
-          {error && <div className="login-error">{error}</div>}
-          <button type="submit" className="login-btn" disabled={loading}>
-            {loading ? <span className="spinner" /> : 'Sign In with Okta'}
-          </button>
-        </form>
-      )}
-
-      {stage === 'push' && (
-        <div className="push-waiting">
-          <div className="push-animation">
-            <span className="push-icon">📱</span>
-            <span className="push-ring" />
-          </div>
-          <p className="push-title">Check your phone</p>
-          <p className="push-sub">An Okta Verify push notification has been sent.<br />Approve it to continue.</p>
-          <p className="push-hint">Waiting for approval…</p>
-          {error && <div className="login-error" style={{ marginTop: 16 }}>{error}</div>}
-          <button
-            className="login-btn"
-            style={{ marginTop: 20, background: '#6b7280', fontSize: 13 }}
-            onClick={() => { pollingRef.current = false; setStage('credentials'); setError('') }}
-          >
-            ← Cancel
-          </button>
-        </div>
-      )}
-
-      {stage === 'cookies' && (
-        <form className="login-form" onSubmit={handleCookieSubmit} noValidate>
-          <div className="support-info support-info-success">
-            <span className="support-info-icon">✓</span>
-            <p><strong>Kibana authenticated.</strong> Now paste your IDMC session cookies so the app can call the scheduler API on your behalf.</p>
-          </div>
-          <div className="support-cookie-steps">
-            {idmcFailReason && (
-              <p className="support-cookie-how" style={{ background: '#fef2f2', borderColor: '#fecaca', color: '#b91c1c', marginBottom: 8 }}>
-                <strong>Auto-fetch failed:</strong> {idmcFailReason}
-              </p>
-            )}
-            <p className="support-cookie-how">
-              <strong>How to get these:</strong> In your browser, navigate to{' '}
-              <code>use4.dm-us.informaticacloud.com</code> (or whatever pod the customer is on),
-              open DevTools → Application → Cookies, and copy the values below.
-            </p>
-          </div>
-          <div className="form-group">
-            <label htmlFor="user-session">
-              USER_SESSION
-              <span className="field-hint">HttpOnly cookie from dm-us.informaticacloud.com</span>
-            </label>
-            <input
-              id="user-session" type="password" autoComplete="off" spellCheck={false}
-              placeholder="5yBkg6Es4ieeRUKKTIMOUu…"
-              value={userSession} onChange={(e) => { setUserSession(e.target.value); setError('') }}
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="xsrf-token">
-              XSRF_TOKEN
-              <span className="field-hint">Non-HttpOnly cookie from dm-us.informaticacloud.com</span>
-            </label>
-            <input
-              id="xsrf-token" type="text" autoComplete="off" spellCheck={false}
-              placeholder="ilzpZHfkVuaifRhO7Bbyed…"
-              value={xsrfToken} onChange={(e) => { setXsrfToken(e.target.value); setError('') }}
-            />
-          </div>
-          {error && <div className="login-error">{error}</div>}
-          <button type="submit" className="login-btn">
-            Enter Support Mode →
-          </button>
-          <button
-            type="button"
-            className="login-btn"
-            style={{ background: '#6b7280', marginTop: 8, fontSize: 13 }}
-            onClick={() => { setStage('credentials'); setError('') }}
-          >
-            ← Start Over
-          </button>
-        </form>
-      )}
-    </>
-  )
-}
-
-// ── User Login (existing IICS tabs) ──────────────────────────────────────
+// ── User Login ───────────────────────────────────────────────────────────
 function UserLoginForm() {
   const { login } = useAuth()
   const navigate = useNavigate()
@@ -446,39 +224,16 @@ function UserLoginForm() {
 
 // ── Main Login Page ───────────────────────────────────────────────────────
 export default function LoginPage() {
-  const [mode, setMode] = useState('user')
-  const { kibanaSession } = useKibana()
-
   return (
     <div className="login-page">
-      <div className={`login-card${mode === 'support' ? ' login-card-wide' : ''}`}>
+      <div className="login-card">
         <div className="login-header">
           <div className="login-logo">⚡</div>
           <h1>INFA Schedule Monitor</h1>
-          <p>{mode === 'user' ? 'Sign in with your Informatica IICS credentials' : 'Informatica internal support access'}</p>
+          <p>Sign in with your Informatica IICS credentials</p>
         </div>
 
-        <div className="mode-selector">
-          <button
-            type="button"
-            className={`mode-btn${mode === 'user' ? ' mode-active' : ''}`}
-            onClick={() => setMode('user')}
-          >
-            <span className="mode-icon">👤</span>
-            Customer Login
-          </button>
-          <button
-            type="button"
-            className={`mode-btn${mode === 'support' ? ' mode-active' : ''}`}
-            onClick={() => setMode('support')}
-          >
-            <span className="mode-icon">🛠</span>
-            Support Login
-            {kibanaSession && <span className="mode-connected-dot" />}
-          </button>
-        </div>
-
-        {mode === 'user' ? <UserLoginForm /> : <SupportLoginForm />}
+        <UserLoginForm />
 
         <p className="login-footer">Session is stored for this browser tab only.</p>
       </div>
