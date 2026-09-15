@@ -21,7 +21,7 @@ from pydantic import BaseModel
 OKTA_DOMAIN   = "https://informatica.okta.com"
 KIBANA_BASE   = "https://kibana.ext.prod.elk.cloudtrust.rocks"
 KIBANA_SPACE  = "/s/gcs"
-KBN_VERSION   = "8.19.13"
+KBN_VERSION   = "9.4.1"
 
 # Authenticator ID for Okta Verify push (observed in HAR)
 PUSH_AUTHN_ID = "aut1x1yz0hvcDMeLB1d8"

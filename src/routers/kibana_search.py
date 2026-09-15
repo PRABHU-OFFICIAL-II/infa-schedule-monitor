@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 KIBANA_BASE  = "https://kibana.ext.prod.elk.cloudtrust.rocks"
 KIBANA_SPACE = "/s/gcs"
-KBN_VERSION  = "8.19.13"
+KBN_VERSION  = "9.4.1"
 DEFAULT_INDEX = "filebeat-*-intcloud-*"
 
 router = APIRouter()
