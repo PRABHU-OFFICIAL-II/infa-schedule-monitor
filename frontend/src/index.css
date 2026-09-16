@@ -1,20 +1,18 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
-
 *, *::before, *::after {
   box-sizing: border-box;
 }
 
 :root {
-  --sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --font: Verdana, Geneva, Tahoma, sans-serif;
   --mono: ui-monospace, 'Cascadia Code', Consolas, monospace;
 }
 
 html, body {
   margin: 0;
   padding: 0;
-  font-family: var(--sans);
-  font-size: 15px;
-  line-height: 1.5;
+  font-family: var(--font);
+  font-size: 14px;
+  line-height: 1.55;
   color: #111827;
   background: #f3f4f6;
   -webkit-font-smoothing: antialiased;
@@ -34,7 +32,7 @@ html, body {
 
 h1, h2, h3, h4, h5, h6 {
   margin: 0;
-  font-weight: 600;
+  font-weight: 700;
   line-height: 1.25;
   color: #111827;
 }

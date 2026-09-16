@@ -101,43 +101,46 @@
 .stat-tile {
   background: #fff;
   border-radius: 14px;
-  padding: 20px 20px 16px;
+  padding: 22px 20px 18px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 5px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04);
-  border-top: 3px solid transparent;
+  border: 1px solid #eef0f3;
   transition: transform 0.15s, box-shadow 0.15s;
 }
 .stat-tile:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.08), 0 1px 4px rgba(0,0,0,0.04);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
 }
 
-.tile-blue   { border-top-color: #3b82f6; }
-.tile-indigo { border-top-color: #6366f1; }
-.tile-teal   { border-top-color: #14b8a6; }
-.tile-green  { border-top-color: #22c55e; }
-.tile-red    { border-top-color: #ef4444; }
-.tile-orange { border-top-color: #f97316; }
+.tile-blue   .tile-value { color: #2563eb; }
+.tile-indigo .tile-value { color: #4f46e5; }
+.tile-teal   .tile-value { color: #0891b2; }
+.tile-green  .tile-value { color: #16a34a; }
+.tile-red    .tile-value { color: #dc2626; }
+.tile-orange .tile-value { color: #ea580c; }
 
 .tile-value {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: 700;
   color: #111827;
   line-height: 1;
+  letter-spacing: -0.5px;
 }
 
 .tile-label {
-  font-size: 13px;
-  font-weight: 500;
+  font-size: 11px;
+  font-weight: 600;
   color: #374151;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
 }
 
 .tile-sub {
   font-size: 11px;
   color: #9ca3af;
-  margin-top: 2px;
+  margin-top: 1px;
 }
 
 /* ── Infra alert ─────────────────────────────────────────── */
@@ -185,6 +188,7 @@
   background: #fff;
   border-radius: 14px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04);
+  border: 1px solid #eef0f3;
   overflow: hidden;
 }
 
@@ -192,13 +196,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
-  border-bottom: 1px solid #f3f4f6;
+  padding: 18px 22px;
+  border-bottom: 1px solid #f0f1f4;
 }
 
 .table-header h3 {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 14px;
+  font-weight: 700;
   color: #111827;
   margin: 0;
 }
@@ -220,35 +224,35 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  padding: 12px 20px;
-  border-bottom: 1px solid #f3f4f6;
-  background: #fafafa;
+  padding: 12px 22px;
+  border-bottom: 1px solid #f0f1f4;
+  background: #f8f9fb;
   align-items: center;
 }
 
 .filter-input {
-  padding: 7px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  font-size: 13px;
+  padding: 7px 11px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 12px;
   color: #111;
   background: #fff;
   outline: none;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, box-shadow 0.15s;
 }
-.filter-input:focus { border-color: #6366f1; }
+.filter-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 
 .filter-select {
-  padding: 7px 10px;
-  border: 1px solid #d1d5db;
-  border-radius: 7px;
-  font-size: 13px;
+  padding: 7px 11px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 12px;
   color: #374151;
   background: #fff;
   outline: none;
   cursor: pointer;
 }
-.filter-select:focus { border-color: #6366f1; }
+.filter-select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,0.1); }
 
 .filter-date-group {
   display: flex;
@@ -341,25 +345,25 @@
 .failures-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .failures-table th {
-  background: #f8f9fb;
-  padding: 10px 16px;
+  background: #f5f6fa;
+  padding: 11px 16px;
   text-align: left;
-  font-size: 11px;
-  font-weight: 600;
-  color: #9ca3af;
+  font-size: 10px;
+  font-weight: 700;
+  color: #6b7280;
   text-transform: uppercase;
-  letter-spacing: 0.6px;
+  letter-spacing: 0.7px;
   white-space: nowrap;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 2px solid #eef0f3;
 }
 
 .failures-table td {
   padding: 11px 16px;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid #f0f1f4;
   vertical-align: middle;
   max-width: 240px;
   overflow: hidden;

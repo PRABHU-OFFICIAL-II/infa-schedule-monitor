@@ -402,24 +402,30 @@
 
 .mr-tile {
   background: #fff;
-  border-radius: 12px;
-  padding: 18px 20px 14px;
+  border-radius: 14px;
+  padding: 22px 20px 18px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-  border-top: 3px solid transparent;
+  gap: 5px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 4px 12px rgba(0,0,0,0.04);
+  border: 1px solid #eef0f3;
+  transition: transform 0.15s, box-shadow 0.15s;
 }
-.tile-blue   { border-top-color: #3b82f6; }
-.tile-indigo { border-top-color: #6366f1; }
-.tile-green  { border-top-color: #22c55e; }
-.tile-gray   { border-top-color: #9ca3af; }
-.tile-red    { border-top-color: #ef4444; }
-.tile-orange { border-top-color: #f97316; }
+.mr-tile:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.04);
+}
 
-.tile-value { font-size: 32px; font-weight: 700; color: #111827; line-height: 1; }
-.tile-label { font-size: 13px; font-weight: 500; color: #374151; }
-.tile-sub   { font-size: 11px; color: #9ca3af; margin-top: 2px; }
+.tile-blue   .tile-value { color: #2563eb; }
+.tile-indigo .tile-value { color: #4f46e5; }
+.tile-green  .tile-value { color: #16a34a; }
+.tile-gray   .tile-value { color: #6b7280; }
+.tile-red    .tile-value { color: #dc2626; }
+.tile-orange .tile-value { color: #ea580c; }
+
+.tile-value { font-size: 36px; font-weight: 700; color: #111827; line-height: 1; letter-spacing: -0.5px; }
+.tile-label { font-size: 11px; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: 0.4px; }
+.tile-sub   { font-size: 11px; color: #9ca3af; margin-top: 1px; }
 
 /* ── Infra alert ─────────────────────────────────────────────── */
 .infra-alert {
