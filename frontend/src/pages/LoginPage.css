@@ -3,14 +3,14 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f0f2f5;
+  background: linear-gradient(135deg, #eef2ff 0%, #f0f2f5 50%, #ede9fe 100%);
   padding: 24px;
 }
 
 .login-card {
   background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 16px 48px -8px rgba(99,102,241,0.12);
   padding: 40px 36px;
   width: 100%;
   max-width: 420px;
@@ -22,8 +22,16 @@
 }
 
 .login-logo {
-  font-size: 36px;
-  margin-bottom: 12px;
+  font-size: 28px;
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: 0 4px 12px rgba(99,102,241,0.3);
 }
 
 .login-header h1 {
@@ -45,32 +53,39 @@
 
 .auth-tabs {
   display: flex;
-  border-bottom: 1px solid #e5e7eb;
+  border-bottom: none;
   margin-bottom: 20px;
-  gap: 2px;
+  gap: 4px;
+  background: #f3f4f6;
+  padding: 4px;
+  border-radius: 10px;
 }
 
 .auth-tab {
   flex: 1;
-  padding: 9px 4px;
+  padding: 8px 4px;
   background: none;
   border: none;
-  border-bottom: 2px solid transparent;
+  border-bottom: none;
+  border-radius: 7px;
   font-size: 13px;
   font-weight: 500;
   color: #6b7280;
   cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
+  transition: background 0.15s, color 0.15s;
   white-space: nowrap;
 }
 
 .auth-tab:hover:not(:disabled) {
+  background: rgba(0,0,0,0.04);
   color: #374151;
 }
 
 .auth-tab.active {
+  background: #fff;
   color: #6366f1;
-  border-bottom-color: #6366f1;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
 }
 
 .auth-tab:disabled {
@@ -100,13 +115,13 @@
 .form-group select,
 .form-group textarea {
   padding: 10px 12px;
-  border: 1px solid #d1d5db;
-  border-radius: 8px;
+  border: 1.5px solid #e5e7eb;
+  border-radius: 10px;
   font-size: 14px;
   color: #111;
   background: #fff;
   outline: none;
-  transition: border-color 0.2s;
+  transition: border-color 0.15s, box-shadow 0.15s;
   appearance: auto;
 }
 
@@ -125,7 +140,7 @@
 .form-group select:focus,
 .form-group textarea:focus {
   border-color: #6366f1;
-  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
 }
 
 .field-hint {
@@ -182,22 +197,28 @@
 
 .login-btn {
   padding: 11px;
-  background: #6366f1;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
   color: #fff;
   border: none;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 15px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: opacity 0.15s, transform 0.1s;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 44px;
+  min-height: 46px;
+  letter-spacing: 0.01em;
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #4f46e5;
+  opacity: 0.92;
+  transform: translateY(-1px);
+}
+
+.login-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .login-btn:disabled {
